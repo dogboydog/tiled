@@ -25,6 +25,8 @@
 #include "propertytype.h"
 #include "variantpropertymanager.h"
 
+#include <QScopedValueRollback>
+
 namespace Tiled {
 
 CustomPropertiesHelper::CustomPropertiesHelper(QtVariantPropertyManager *propertyManager,
@@ -102,7 +104,6 @@ QtVariantProperty *CustomPropertiesHelper::createPropertyInternal(const QString 
         mPropertyTypeIds.insert(property, 0);
     }
 
-    // todo: this doesn't set value of child properties...
     property->setValue(toDisplayValue(value));
 
     return property;
@@ -110,22 +111,38 @@ QtVariantProperty *CustomPropertiesHelper::createPropertyInternal(const QString 
 
 void CustomPropertiesHelper::deleteProperty(QtProperty *property)
 {
+    Q_ASSERT(hasProperty(property));
+
+    mProperties.remove(property->propertyName());
+    deletePropertyInternal(property);
+}
+
+void CustomPropertiesHelper::deletePropertyInternal(QtProperty *property)
+{
     Q_ASSERT(mPropertyTypeIds.contains(property));
 
-    // not the case for child properties
-    if (mProperties.value(property->propertyName()) == property)
-        mProperties.remove(property->propertyName());
+    const auto subProperties = property->subProperties();
+    for (QtProperty *subProperty : subProperties) {
+        if (mPropertyParents.value(subProperty) == property) {
+            deletePropertyInternal(subProperty);
+            mPropertyParents.remove(subProperty);
+        }
+    }
 
     mPropertyTypeIds.remove(property);
-    mPropertyParents.remove(property);
+
     delete property;
 }
 
 void CustomPropertiesHelper::clear()
 {
-    qDeleteAll(mProperties);
+    QHashIterator<QtProperty *, int> it(mPropertyTypeIds);
+    while (it.hasNext())
+        delete it.next().key();
+
     mProperties.clear();
     mPropertyTypeIds.clear();
+    mPropertyParents.clear();
 }
 
 QVariant CustomPropertiesHelper::toDisplayValue(QVariant value) const
@@ -145,28 +162,50 @@ QVariant CustomPropertiesHelper::fromDisplayValue(QtProperty *property,
     if (value.userType() == VariantPropertyManager::displayObjectRefTypeId())
         value = QVariant::fromValue(value.value<DisplayObjectRef>().ref);
 
-    if (const auto typeId = mPropertyTypeIds.value(property))
-        if (auto type = Object::propertyTypes().findTypeById(typeId))
-            value = type->wrap(value);
+    if (auto type = propertyType(property))
+        value = type->wrap(value);
 
     return value;
 }
 
 void CustomPropertiesHelper::valueChanged(QtProperty *property, const QVariant &value)
 {
-    // This function handles changes in sub-properties only
-    auto parent = static_cast<QtVariantProperty*>(mPropertyParents.value(property));
-    if (!parent)
-        return;
+    if (!mApplyingToChildren) {
+        if (auto parent = static_cast<QtVariantProperty*>(mPropertyParents.value(property))) {
+            // Bubble the value up to the parent
 
-    auto variantMap = parent->value().toMap();
-    qDebug() << "before:" << variantMap;
-    variantMap.insert(property->propertyName(), fromDisplayValue(property, value));
-    qDebug() << "after:" << variantMap;
+            auto variantMap = parent->value().toMap();
+            variantMap.insert(property->propertyName(), fromDisplayValue(property, value));
 
-    // This might trigger another call of this function, in case of recursive
-    // class members.
-    parent->setValue(variantMap);
+            // This might trigger another call of this function, in case of
+            // recursive class members.
+            QScopedValueRollback<bool> updating(mApplyingToParent, true);
+            parent->setValue(variantMap);
+        }
+    }
+
+    if (!mApplyingToParent) {
+        auto type = propertyType(property);
+
+        if (type && type->type == PropertyType::PT_Class) {
+            // Apply the change to the children
+
+            auto &members = static_cast<const ClassPropertyType&>(*type).members;
+
+            const auto subProperties = property->subProperties();
+            const auto map = value.toMap();
+
+            QScopedValueRollback<bool> updating(mApplyingToChildren, true);
+
+            for (QtProperty *subProperty : subProperties) {
+                const auto name = subProperty->propertyName();
+                if (map.contains(name))
+                    static_cast<QtVariantProperty*>(subProperty)->setValue(toDisplayValue(map.value(name)));
+                else
+                    static_cast<QtVariantProperty*>(subProperty)->setValue(toDisplayValue(members.value(name)));
+            }
+        }
+    }
 }
 
 void CustomPropertiesHelper::propertyTypesChanged()
@@ -203,8 +242,6 @@ void CustomPropertiesHelper::setPropertyAttributes(QtProperty *property, const P
             property->addSubProperty(subProperty);
             mPropertyParents.insert(subProperty, property);
         }
-
-        // TODO: How to set the actual value on the sub-properties?
         break;
     }
     case Tiled::PropertyType::PT_Enum: {
@@ -218,6 +255,13 @@ void CustomPropertiesHelper::setPropertyAttributes(QtProperty *property, const P
         break;
     }
     }
+}
+
+const PropertyType *CustomPropertiesHelper::propertyType(QtProperty *property) const
+{
+    if (const auto typeId = mPropertyTypeIds.value(property))
+        return Object::propertyTypes().findTypeById(typeId);
+    return nullptr;
 }
 
 } // namespace Tiled
