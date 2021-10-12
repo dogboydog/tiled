@@ -237,14 +237,17 @@ QString VariantPropertyManager::valueText(const QtProperty *property) const
 QIcon VariantPropertyManager::valueIcon(const QtProperty *property) const
 {
     if (mValues.contains(property)) {
-        QVariant value = mValues[property];
-        int typeId = propertyType(property);
+        const QVariant value = mValues[property];
+        const int typeId = propertyType(property);
 
         if (typeId == displayObjectRefTypeId()) {
             const DisplayObjectRef ref = value.value<DisplayObjectRef>();
             if (auto object = ref.object())
                 return ObjectIconManager::instance().iconForObject(*object);
         }
+
+        if (typeId == unstyledGroupTypeId())
+            return QIcon();
 
         QString filePath;
 
