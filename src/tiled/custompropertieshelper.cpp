@@ -181,6 +181,8 @@ void CustomPropertiesHelper::valueChanged(QtProperty *property, const QVariant &
             // recursive class members.
             QScopedValueRollback<bool> updating(mApplyingToParent, true);
             parent->setValue(variantMap);
+
+            property->setModified(true);
         }
     }
 
@@ -199,7 +201,9 @@ void CustomPropertiesHelper::valueChanged(QtProperty *property, const QVariant &
 
             for (QtProperty *subProperty : subProperties) {
                 const auto name = subProperty->propertyName();
-                if (map.contains(name))
+                const bool modified = map.contains(name);
+                subProperty->setModified(modified);
+                if (modified)
                     static_cast<QtVariantProperty*>(subProperty)->setValue(toDisplayValue(map.value(name)));
                 else
                     static_cast<QtVariantProperty*>(subProperty)->setValue(toDisplayValue(members.value(name)));
