@@ -2340,7 +2340,7 @@ void MainWindow::retranslateUi()
     mResetToDefaultLayout->setText(tr("Reset to Default Layout"));
     mLockLayout->setText(tr("Lock Layout"));
     mShowObjectTypesEditor->setText(tr("Object Types Editor"));
-    mShowPropertyTypesEditor->setText(tr("Enums Editor"));
+    mShowPropertyTypesEditor->setText(tr("Property Types Editor"));
     mActionHandler->retranslateUi();
     CommandManager::instance()->retranslateUi();
 }
