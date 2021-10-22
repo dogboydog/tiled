@@ -66,7 +66,7 @@ private:
     void applyPropertyTypes();
     void propertyTypesChanged();
 
-    void updateValues();
+    void updateDetails();
     void updateActions();
 
     void addValue();
@@ -81,8 +81,10 @@ private:
     Ui::PropertyTypesEditor *mUi;
     PropertyTypesModel *mPropertyTypesModel;
     QTreeView *mValuesView;
+    QWidget *mValuesWithToolBarWidget;
     QStringListModel *mValuesModel;
     QtTreePropertyBrowser *mMembersView;
+    QWidget *mMembersWithToolBarWidget;
     CustomPropertiesHelper *mPropertiesHelper;
     QStackedLayout *mValuesAndMembersStack;
     QLabel *mValuesOrMembersLabel;
@@ -97,6 +99,10 @@ private:
 
     QAction *mAddValueAction;
     QAction *mRemoveValueAction;
+
+    QAction *mAddMemberAction;
+    QAction *mRemoveMemberAction;
+    QAction *mRenameMemberAction;
 };
 
 } // namespace Tiled

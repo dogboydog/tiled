@@ -800,7 +800,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     mShowObjectTypesEditor = new QAction(tr("Object Types Editor"), this);
     mShowObjectTypesEditor->setCheckable(true);
 
-    mShowPropertyTypesEditor = new QAction(tr("Enums Editor"), this);
+    mShowPropertyTypesEditor = new QAction(tr("Property Types Editor"), this);
     mShowPropertyTypesEditor->setCheckable(true);
 
     mUi->menuView->insertAction(mUi->actionShowGrid, mViewsAndToolbarsAction);
