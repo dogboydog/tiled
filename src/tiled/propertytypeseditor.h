@@ -29,6 +29,7 @@ class QStackedLayout;
 class QStringListModel;
 class QTreeView;
 
+class QtBrowserItem;
 class QtTreePropertyBrowser;
 
 namespace Ui {
@@ -61,6 +62,8 @@ private:
     void removeSelectedPropertyTypes();
     QModelIndex selectedPropertyTypeIndex() const;
 
+    void currentMemberItemChanged(QtBrowserItem *item);
+
     void propertyTypeNameChanged(const QModelIndex &index,
                                  const PropertyType &type);
     void applyPropertyTypes();
@@ -72,9 +75,18 @@ private:
     void addValue();
     void removeValues();
 
+    void openAddMemberDialog();
+    void addMember(const QString &name, const QVariant &value = QVariant());
+    void editMember(const QString &name);
+    void removeMember();
+    void renameMember();
+    void renameMemberTo(const QString &name);
+
     void selectFirstPropertyType();
     void valuesChanged();
     void nameChanged(const QString &name);
+
+    void memberValueChanged(const QString &name, const QVariant &value);
 
     void retranslateUi();
 
@@ -91,7 +103,7 @@ private:
 
     bool mSettingPrefPropertyTypes = false;
     bool mSettingName = false;
-    bool mUpdatingValues = false;
+    bool mUpdatingDetails = false;
 
     QAction *mAddEnumPropertyTypeAction;
     QAction *mAddClassPropertyTypeAction;

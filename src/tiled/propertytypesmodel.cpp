@@ -122,6 +122,15 @@ void PropertyTypesModel::setPropertyTypeValues(int index,
     enumType.values = values;
 }
 
+void PropertyTypesModel::setPropertyTypeMembers(int index, const QVariantMap &members)
+{
+    auto &propertyType = mPropertyTypes->typeAt(index);
+    Q_ASSERT(propertyType.type == PropertyType::PT_Class);
+
+    auto &classType = static_cast<ClassPropertyType&>(propertyType);
+    classType.members = members;
+}
+
 void PropertyTypesModel::removePropertyTypes(const QModelIndexList &indexes)
 {
     QVector<int> rows;

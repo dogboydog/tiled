@@ -51,6 +51,7 @@ public:
 
     void setPropertyTypeName(int row, const QString &name);
     void setPropertyTypeValues(int index, const QStringList &values);
+    void setPropertyTypeMembers(int index, const QVariantMap &members);
     void removePropertyTypes(const QModelIndexList &indexes);
 
     QModelIndex addNewPropertyType(PropertyType::Type type);
