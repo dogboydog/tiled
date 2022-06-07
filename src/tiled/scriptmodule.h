@@ -134,7 +134,7 @@ public slots:
     void alert(const QString &text, const QString &title = QString()) const;
     bool confirm(const QString &text, const QString &title = QString()) const;
     QString prompt(const QString &label, const QString &text = QString(), const QString &title = QString()) const;
-
+    void advancedPrompt(const QString &title = QString()) const;
     void log(const QString &text) const;
 
     void warn(const QString &text, QJSValue activated = QJSValue());

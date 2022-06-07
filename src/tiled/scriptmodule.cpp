@@ -34,7 +34,7 @@
 #include "scriptmanager.h"
 #include "tilesetdocument.h"
 #include "tileseteditor.h"
-
+#include "ui_scriptadvancedprompt.h"
 #include <QAction>
 #include <QCoreApplication>
 #include <QInputDialog>
@@ -562,6 +562,10 @@ QString ScriptModule::prompt(const QString &label, const QString &text, const QS
 {
     ScriptManager::ResetBlocker blocker;
     return QInputDialog::getText(MainWindow::maybeInstance(), title, label, QLineEdit::Normal, text);
+}
+
+void ScriptModule::advancedPrompt(const QString &title) const{
+   ScriptAdvancedPrompt(MainWindow::maybeInstance()).exec();
 }
 
 void ScriptModule::log(const QString &text) const

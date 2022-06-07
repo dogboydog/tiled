@@ -523,6 +523,8 @@ DynamicLibrary {
         "transformmapobjects.h",
         "treeviewcombobox.cpp",
         "treeviewcombobox.h",
+        "ui_scriptadvancedprompt.h",
+        "ui_scriptadvancedprompt.cpp",
         "undocommands.cpp",
         "undocommands.h",
         "undodock.cpp",
