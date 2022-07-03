@@ -29,6 +29,7 @@ FilterEdit::FilterEdit(QWidget *parent)
     : QLineEdit(parent)
 {
     setClearButtonEnabled(true);
+    setAttribute(Qt::WA_InputMethodEnabled);
 }
 
 bool FilterEdit::event(QEvent *event)
