@@ -325,6 +325,7 @@ namespace Tiled {
             , mDelegate(new ActionMatchDelegate(this))
     {
         setAttribute(Qt::WA_DeleteOnClose);
+        setAttribute(Qt::WA_InputMethodEnabled);
         setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
 
         mActionResultsView->setUniformRowHeights(true);
