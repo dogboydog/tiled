@@ -27,7 +27,6 @@
 namespace Tiled {
 
     class FilterEdit;
-    class ActionMatchDelegate;
     class ActionMatchesModel;
     class ActionResultsView;
 
@@ -54,7 +53,7 @@ namespace Tiled {
         FilterEdit *mFilterEdit;
         ActionResultsView *mActionResultsView;
         ActionMatchesModel *mListModel;
-        ActionMatchDelegate *mDelegate;
+        MatchDelegate *mDelegate;
     };
 
 } // namespace Tiled
