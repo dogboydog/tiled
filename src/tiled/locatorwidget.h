@@ -21,11 +21,43 @@
 #pragma once
 
 #include <QFrame>
-
+#include <QStyledItemDelegate>
+#include <QTreeView>
 namespace Tiled {
 
 class FilterEdit;
-class MatchDelegate;
+class MatchDelegate : public QStyledItemDelegate
+{
+public:
+    MatchDelegate(QFont smallFont, QFont bigFont, QObject *parent = nullptr);
+
+    QSize sizeHint(const QStyleOptionViewItem &option,
+                  const QModelIndex &index) const override;
+
+    void paint(QPainter *painter,
+               const QStyleOptionViewItem &option,
+               const QModelIndex &index) const override;
+
+    void setWords(const QStringList &words) { mWords = words; }
+    QFont big;
+    QFont small;
+protected:
+   QStringList mWords;
+
+};
+
+class ResultsView : public QTreeView
+{
+public:
+    explicit ResultsView(QWidget *parent = nullptr);
+
+    QSize sizeHint() const override;
+
+    void updateMaximumHeight();
+
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+};
 class MatchesModel;
 class ResultsView;
 
@@ -34,17 +66,27 @@ class LocatorWidget : public QFrame
     Q_OBJECT
 
 public:
-    explicit LocatorWidget(QWidget *parent = nullptr);
-
+    explicit LocatorWidget(MatchDelegate *matchDelegate, FilterEdit *filterEdit,
+                           QFont smallFont, QFont bigFont,
+                           QWidget *parent = nullptr);
     void setVisible(bool visible) override;
 
-private:
+protected:
     void setFilterText(const QString &text);
-
     FilterEdit *mFilterEdit;
-    ResultsView *mResultsView;
-    MatchesModel *mListModel;
     MatchDelegate *mDelegate;
+    QFont small;
+    QFont big;
 };
 
+class ProjectFileLocatorWidget: public LocatorWidget {
+
+public:
+    explicit ProjectFileLocatorWidget(QWidget *parent, const QFont base);
+private:
+    MatchesModel *mListModel;
+
+    ResultsView *mResultsView;
+
+};
 } // namespace Tiled

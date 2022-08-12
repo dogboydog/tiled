@@ -37,10 +37,19 @@
 #include <QStyledItemDelegate>
 #include <QTreeView>
 #include <QVBoxLayout>
-
+#include <QWidget>
 #include <QDebug>
 
 namespace Tiled {
+static QFont scaledFont(const QFont &font, qreal scale)
+{
+    QFont scaled(font);
+    if (font.pixelSize() > 0)
+        scaled.setPixelSize(font.pixelSize() * scale);
+    else
+        scaled.setPointSizeF(font.pointSizeF() * scale);
+    return scaled;
+}
 
 class MatchesModel : public QAbstractListModel
 {
@@ -86,48 +95,13 @@ void MatchesModel::setMatches(QVector<ProjectModel::Match> matches)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static QFont scaledFont(const QFont &font, qreal scale)
-{
-    QFont scaled(font);
-    if (font.pixelSize() > 0)
-        scaled.setPixelSize(font.pixelSize() * scale);
-    else
-        scaled.setPointSizeF(font.pointSizeF() * scale);
-    return scaled;
-}
 
-class MatchDelegate : public QStyledItemDelegate
-{
-public:
-    MatchDelegate(QObject *parent = nullptr);
-
-    QSize sizeHint(const QStyleOptionViewItem &option,
-                  const QModelIndex &index) const override;
-
-    void paint(QPainter *painter,
-               const QStyleOptionViewItem &option,
-               const QModelIndex &index) const override;
-
-    void setWords(const QStringList &words) { mWords = words; }
-
-private:
-    class Fonts {
-    public:
-        Fonts(const QFont &base)
-            : small(scaledFont(base, 0.9))
-            , big(scaledFont(base, 1.2))
-        {}
-
-        const QFont small;
-        const QFont big;
-    };
-
-    QStringList mWords;
-};
-
-MatchDelegate::MatchDelegate(QObject *parent)
+MatchDelegate::MatchDelegate(QFont smallFont, QFont bigFont, QObject *parent)
     : QStyledItemDelegate(parent)
-{}
+{
+    small = smallFont;
+    big = bigFont;
+}
 
 QSize MatchDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &) const
 {
@@ -191,8 +165,7 @@ void MatchDelegate::paint(QPainter *painter,
     filePathHtml.append(escapedRange(filePathIndex, filePath.size() - 1));
     fileNameHtml.append(escapedRange(qMax(filePathIndex, lastSlash + 1), filePath.size() - 1));
 
-    const Fonts fonts(option.font);
-    const QFontMetrics bigFontMetrics(fonts.big);
+    const QFontMetrics bigFontMetrics(big);
 
     const int margin = Utils::dpiScaled(2);
     const auto fileNameRect = option.rect.adjusted(margin, margin, -margin, 0);
@@ -220,16 +193,16 @@ void MatchDelegate::paint(QPainter *painter,
     staticText.setTextOption(textOption);
     staticText.setTextFormat(Qt::RichText);
     staticText.setTextWidth(fileNameRect.width());
-    staticText.prepare(painter->transform(), fonts.big);
+    staticText.prepare(painter->transform(), big);
 
-    painter->setFont(fonts.big);
+    painter->setFont(big);
     painter->drawStaticText(fileNameRect.topLeft(), staticText);
 
     staticText.setText(filePathHtml);
-    staticText.prepare(painter->transform(), fonts.small);
+    staticText.prepare(painter->transform(), small);
 
     painter->setOpacity(0.75);
-    painter->setFont(fonts.small);
+    painter->setFont(small);
     painter->drawStaticText(filePathRect.topLeft(), staticText);
 
     // draw the focus rect
@@ -250,19 +223,6 @@ void MatchDelegate::paint(QPainter *painter,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-class ResultsView : public QTreeView
-{
-public:
-    explicit ResultsView(QWidget *parent = nullptr);
-
-    QSize sizeHint() const override;
-
-    void updateMaximumHeight();
-
-protected:
-    void keyPressEvent(QKeyEvent *event) override;
-};
 
 ResultsView::ResultsView(QWidget *parent)
     : QTreeView(parent)
@@ -307,12 +267,21 @@ inline void ResultsView::keyPressEvent(QKeyEvent *event)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-LocatorWidget::LocatorWidget(QWidget *parent)
-    : QFrame(parent, Qt::Popup)
-    , mFilterEdit(new FilterEdit(this))
+LocatorWidget::LocatorWidget(MatchDelegate *matchDelegate, FilterEdit *filterEdit,
+                             QFont smallFont, QFont bigFont, QWidget *parent)
+    : QFrame(parent,  Qt::Popup)
+{
+    mDelegate = matchDelegate;
+    mFilterEdit = filterEdit;
+    small = smallFont;
+    big = bigFont;
+}
+ProjectFileLocatorWidget::ProjectFileLocatorWidget(QWidget *parent, const QFont &base)
+    : LocatorWidget(new MatchDelegate(scaledFont(base, 0.9), scaledFont(base, 1.2), this), new FilterEdit(this),
+                    scaledFont(base, 0.9), scaledFont(base, 1.2),
+                    parent)
     , mResultsView(new ResultsView(this))
     , mListModel(new MatchesModel(this))
-    , mDelegate(new MatchDelegate(this))
 {
     setAttribute(Qt::WA_DeleteOnClose);
     setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -344,7 +313,7 @@ LocatorWidget::LocatorWidget(QWidget *parent)
     verticalLayout->addStretch(0);
     setLayout(verticalLayout);
 
-    connect(mFilterEdit, &QLineEdit::textChanged, this, &LocatorWidget::setFilterText);
+    connect(mFilterEdit, &QLineEdit::textChanged, this, &ProjectFileLocatorWidget::setFilterText);
     connect(mResultsView, &QAbstractItemView::activated, this, [this] (const QModelIndex &index) {
         const QString file = mListModel->matches().at(index.row()).path;
         close();
@@ -352,8 +321,7 @@ LocatorWidget::LocatorWidget(QWidget *parent)
     });
 }
 
-void LocatorWidget::setVisible(bool visible)
-{
+void LocatorWidget::setVisible(bool visible) {
     QFrame::setVisible(visible);
 
     if (visible) {
@@ -363,44 +331,9 @@ void LocatorWidget::setVisible(bool visible)
             mFilterEdit->clear();
         else
             setFilterText(QString());
+        resize(sizeHint());
     }
 }
-
-void LocatorWidget::setFilterText(const QString &text)
-{
-    const QString normalized = QDir::fromNativeSeparators(text);
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    const QStringList words = normalized.split(QLatin1Char(' '), QString::SkipEmptyParts);
-#else
-    const QStringList words = normalized.split(QLatin1Char(' '), Qt::SkipEmptyParts);
-#endif
-
-    auto projectModel = ProjectManager::instance()->projectModel();
-    auto matches = projectModel->findFiles(words);
-
-    std::stable_sort(matches.begin(), matches.end(), [] (const ProjectModel::Match &a, const ProjectModel::Match &b) {
-        // Sort based on score first
-        if (a.score != b.score)
-            return a.score > b.score;
-
-        // If score is the same, sort alphabetically
-        return a.relativePath().compare(b.relativePath(), Qt::CaseInsensitive) < 0;
-    });
-
-    mDelegate->setWords(words);
-    mListModel->setMatches(matches);
-
-    mResultsView->updateGeometry();
-    mResultsView->updateMaximumHeight();
-
-    // Restore or introduce selection
-    if (!matches.isEmpty())
-        mResultsView->setCurrentIndex(mListModel->index(0));
-
-    layout()->activate();
-    resize(sizeHint());
-}
-
 } // namespace Tiled
 
 #include "moc_locatorwidget.cpp"

@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "actionsearchwidget.h"
+#include "actionlocatorwidget.h"
 #include "clipboardmanager.h"
 #include "document.h"
 #include "preferences.h"
@@ -241,7 +241,7 @@ private:
     IssuesDock *mIssuesDock;
     PropertyTypesEditor *mPropertyTypesEditor;
     QPointer<LocatorWidget> mLocatorWidget;
-    QPointer<ActionSearchWidget> mActionSearchWidget;
+    QPointer<ActionLocatorWidget> mActionLocatorWidget;
     QPointer<QWidget> mPopupWidget;
     double mPopupWidgetShowProgress = 1.0;
 

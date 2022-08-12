@@ -1,5 +1,5 @@
 /*
- *  actionsearchwidget.h
+ *  actionlocatorwidget.h
  * Copyright 2022, Chris Boehm AKA dogboydog
  * Copyright 2022, Thorbjørn Lindeijer <bjorn@lindeijer.nl>
  *
@@ -23,14 +23,14 @@
 #include <QFrame>
 #include <QAction>
 #include "id.h"
+#include "locatorwidget.h"
 
 namespace Tiled {
 
     class FilterEdit;
     class ActionMatchesModel;
-    class ActionResultsView;
 
-    class ActionSearchWidget : public QFrame
+    class ActionLocatorWidget : public LocatorWidget
     {
         Q_OBJECT
 
@@ -43,7 +43,7 @@ namespace Tiled {
             QString text;
         };
 
-        explicit ActionSearchWidget(QWidget *parent = nullptr);
+        explicit ActionLocatorWidget(QWidget *parent = nullptr);
 
         void setVisible(bool visible) override;
 
@@ -51,9 +51,11 @@ namespace Tiled {
         void setFilterText(const QString &text);
 
         FilterEdit *mFilterEdit;
-        ActionResultsView *mActionResultsView;
+        ResultsView *mActionResultsView;
         ActionMatchesModel *mListModel;
         MatchDelegate *mDelegate;
+        const QFont small;
+        const QFont big;
     };
 
 } // namespace Tiled

@@ -30,7 +30,7 @@
 
 #include "aboutdialog.h"
 #include "actionmanager.h"
-#include "actionsearchwidget.h"
+#include "actionlocatorwidget.h"
 #include "addremovetileset.h"
 #include "automappingmanager.h"
 #include "commandbutton.h"
@@ -1161,7 +1161,7 @@ void MainWindow::openFileInProject()
 
 void MainWindow::searchActions()
 {
-    if (mActionSearchWidget)
+    if (mActionLocatorWidget)
         return;
 
     const QSize size(qMax(width() / 3, qMin(Utils::dpiScaled(600), width())),
@@ -1171,10 +1171,10 @@ void MainWindow::searchActions()
                           qMin(remainingHeight / 5, Utils::dpiScaled(60)));
     const QRect rect = QRect(mapToGlobal(localPos), size);
 
-    mActionSearchWidget = new ActionSearchWidget(this);
-    mActionSearchWidget->move(rect.topLeft());
-    mActionSearchWidget->setMaximumSize(rect.size());
-    mActionSearchWidget->show();
+    mActionLocatorWidget = new ActionLocatorWidget(this);
+    mActionLocatorWidget->move(rect.topLeft());
+    mActionLocatorWidget->setMaximumSize(rect.size());
+    mActionLocatorWidget->show();
 }
 static Document *saveAsDocument(Document *document)
 {
