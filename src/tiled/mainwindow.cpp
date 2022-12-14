@@ -349,7 +349,13 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     mUi->actionOpen->setIcon(openIcon);
     mUi->actionSave->setIcon(saveIcon);
     mUi->actionSearchActions->setIcon(searchActionsIcon);
-
+    QToolButton *searchActionsButton = new QToolButton(menuBar());
+    searchActionsButton->setIcon(searchActionsIcon);
+    searchActionsButton->setToolTip(tr("Search Actions"));
+    searchActionsButton->setIconSize(Utils::dpiScaled(QSize(16, 16)));
+    connect(searchActionsButton, &QToolButton::clicked, this, &MainWindow::searchActions);
+    menuBar()->setCornerWidget(searchActionsButton);
+    
     QUndoGroup *undoGroup = mDocumentManager->undoGroup();
     QAction *undoAction = undoGroup->createUndoAction(this, tr("Undo"));
     QAction *redoAction = undoGroup->createRedoAction(this, tr("Redo"));
