@@ -925,15 +925,7 @@ bool TscnPlugin::write(const Map *map, const QString &fileName, Options options)
         device->write(formatByteString("[node name=\"%1\" type=\"Node2D\"]\n\n",
             sanitizeQuotedString(fi.baseName())));
 
-        // TileMap node
-        device->write("[node name=\"TileMap\" type=\"TileMap\" parent=\".\"]\n");
 
-        if (tilesetResPath.isEmpty())
-            device->write("tile_set = SubResource(\"TileSet_0\")\n");
-        else
-            device->write("tile_set = ExtResource(\"TileSet_0\")\n");
-
-        device->write("format = 2\n");
 
         // Tile packing format:
         // DestLocation, SrcX, SrcY
@@ -943,6 +935,16 @@ bool TscnPlugin::write(const Map *map, const QString &fileName, Options options)
         //   SrcY         = SrcY + 65536 * (AlternateId | FLIP_H | FLIP_V | TRANSPOSE)
         int layerIndex = 0;
         for (const auto layer : std::as_const(assetInfo.layers)) {
+            // TileMapLayer node
+            device->write(formatByteString("[node name=\"%1\" type=\"TileMapLayer\" parent=\".\"]\n",
+                                          sanitizeQuotedString(layer->name()) ));
+
+            if (tilesetResPath.isEmpty())
+                device->write("tile_set = SubResource(\"TileSet_0\")\n");
+            else
+                device->write("tile_set = ExtResource(\"TileSet_0\")\n");
+
+            device->write("format = 2\n");
             device->write(formatByteString("layer_%1/name = \"%2\"\n",
                                            layerIndex,
                                            sanitizeQuotedString(layer->name())));
