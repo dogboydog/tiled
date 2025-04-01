@@ -925,15 +925,7 @@ bool TscnPlugin::write(const Map *map, const QString &fileName, Options options)
         device->write(formatByteString("[node name=\"%1\" type=\"Node2D\"]\n\n",
             sanitizeQuotedString(fi.baseName())));
 
-        // TileMap node
-        device->write("[node name=\"TileMap\" type=\"TileMap\" parent=\".\"]\n");
 
-        if (tilesetResPath.isEmpty())
-            device->write("tile_set = SubResource(\"TileSet_0\")\n");
-        else
-            device->write("tile_set = ExtResource(\"TileSet_0\")\n");
-
-        device->write("format = 2\n");
 
         // Tile packing format:
         // DestLocation, SrcX, SrcY
@@ -943,6 +935,19 @@ bool TscnPlugin::write(const Map *map, const QString &fileName, Options options)
         //   SrcY         = SrcY + 65536 * (AlternateId | FLIP_H | FLIP_V | TRANSPOSE)
         int layerIndex = 0;
         for (const auto layer : std::as_const(assetInfo.layers)) {
+            // TileMapLayer node
+            device->write(formatByteString("[node name=\"%1\" type=\"TileMapLayer\" parent=\".\"]\n",
+                                          sanitizeQuotedString(layer->name()) ));
+
+            if (layer->isHidden())
+                device->write("visible=false\n");
+
+            if (tilesetResPath.isEmpty())
+                device->write("tile_set = SubResource(\"TileSet_0\")\n");
+            else
+                device->write("tile_set = ExtResource(\"TileSet_0\")\n");
+
+            device->write("format = 2\n");
             device->write(formatByteString("layer_%1/name = \"%2\"\n",
                                            layerIndex,
                                            sanitizeQuotedString(layer->name())));
@@ -957,9 +962,8 @@ bool TscnPlugin::write(const Map *map, const QString &fileName, Options options)
                                                layerIndex,
                                                layer->resolvedProperty("zIndex").toInt()));
             }
-
-            device->write(formatByteString("layer_%1/tile_data = PackedInt32Array(",
-                                           layerIndex));
+            // todo : Godot 4.3 wants  PackedByteArray
+            device->write("tile_map_data = PackedInt32Array(");
 
             bool first = true;
             auto bounds = layer->bounds();
